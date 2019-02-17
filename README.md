@@ -21,13 +21,13 @@ the current state of those.
 
 It is split in three modules:
 
-- `entity-state-change-producer`. Simulates an event source that changes the
-  the state of entities. The events can also imply that a new entity
-  is created or an existing one is deleted.
+- `entity-change`. Simulates an event source that changes the the state of
+  entities. The events can also imply that a new entity is created or an 
+  existing one is deleted.
   
 - `event-bus`. Essentially an instance of Kafka. Stores all entity state change
   events in the order they have been received.
 
 - `entity-api`. This is the component that provides the current state of an 
-  entity, after consuming all of the events related to it.
+  entity as a web resource, after consuming all of the events related to it.
   

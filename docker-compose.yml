@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+
+  event-bus:
+    image: wurstmeister/kafka:2.12-2.1.0
+
+  entity-api:
+    image: entity-api
+    build:
+      context: entity-api
+    ports:
+      - 8080
+    depends_on:
+      - event-bus
+
+  entity-change:
+    image: entity-change
+    build:
+      context: entity-change
+    depends_on:
+      - event-bus
