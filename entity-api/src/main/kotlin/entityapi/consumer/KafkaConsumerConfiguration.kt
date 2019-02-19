@@ -11,8 +11,6 @@ import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.support.serializer.JsonDeserializer
-
 
 @EnableKafka
 @Configuration
@@ -28,21 +26,21 @@ class KafkaConsumerConfiguration {
     fun consumerConfigs() = mutableMapOf<String, Any>(
             BOOTSTRAP_SERVERS_CONFIG to props.bootstrapServers.joinToString(separator = ","),
             KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
+            VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             GROUP_ID_CONFIG to "json",
             AUTO_OFFSET_RESET_CONFIG to "earliest"
     )
 
     @Bean
-    fun consumerFactory(): ConsumerFactory<String, Map<String, Any?>> {
-        return DefaultKafkaConsumerFactory<String, Map<String, Any?>>(
+    fun consumerFactory(): ConsumerFactory<String, String> {
+        return DefaultKafkaConsumerFactory<String, String>(
                 consumerConfigs(),
                 StringDeserializer(),
-                JsonDeserializer(Map::class.java))
+                StringDeserializer())
     }
 
     @Bean
-    fun kafkaListenerContainerFactory() = ConcurrentKafkaListenerContainerFactory<String, Map<String, Any?>>()
+    fun kafkaListenerContainerFactory() = ConcurrentKafkaListenerContainerFactory<String, String>()
             .also { it.consumerFactory = consumerFactory() }
 
     companion object {

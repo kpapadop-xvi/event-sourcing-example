@@ -9,6 +9,8 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: event-bus
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    ports:
+      - 9092
 
   entity-api:
     image: entity-api

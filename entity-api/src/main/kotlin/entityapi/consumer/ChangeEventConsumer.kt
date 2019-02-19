@@ -1,12 +1,15 @@
 package entityapi.consumer
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import entityapi.consumer.KafkaConsumerConfiguration.Companion.USER_ENTITY_CHANGE_TOPIC
+import entityapi.consumer.eventmodel.ChangeEvent
+import entityapi.consumer.eventmodel.Operation.*
 import entityapi.repository.UserRepository
 import io.micrometer.core.instrument.MeterRegistry
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.support.KafkaHeaders.RECEIVED_MESSAGE_KEY
-import org.springframework.messaging.handler.annotation.Header
-import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.stereotype.Component
 
 @Component
@@ -14,35 +17,44 @@ class ChangeEventConsumer(
         private val users: UserRepository,
         meters: MeterRegistry
 ) {
-
     private val consumedMsgCounter = meters.counter("change-events.consumed.total")
     private val successfulMsgCounter = meters.counter("change-events.consumed.successful")
     private val errorsMsgCounter = meters.counter("change-events.consumed.errors")
 
+    private val objectMapper = jacksonObjectMapper()
+
     @KafkaListener(clientIdPrefix = "change-event-listener", topics = [USER_ENTITY_CHANGE_TOPIC])
-    fun consumeChangeEvent(
-            @Header(RECEIVED_MESSAGE_KEY) userId: String,
-            @Header(OPERATION_HEADER) operation: String,
-            @Payload updatedFields: Map<String, Any?>
-    ) {
+    fun consumeChangeEvent(message: ConsumerRecord<String, String>) {
         try {
-            consumedMsgCounter.increment()
+            val userId = message.key()
+            val changeEventRaw = message.value()
 
-            updatedFields.forEach { e ->
-                val fieldName = e.key
-                val fieldValue = e.value
+            log.info("Received raw: {}", changeEventRaw)
 
-                users.updateField(userId, fieldName, fieldValue)
+            // Manual parsing is required since the Spring JsonDeserializer
+            // cannot be used out-of-the-box with Kotlin
+            val changeEvent = objectMapper.readValue<ChangeEvent>(changeEventRaw)
+
+            val operation = changeEvent.operation
+            val updatedFields = changeEvent.fields
+
+            when (operation) {
+                CREATION, UPDATE -> updatedFields?.forEach { field ->
+                    users.updateField(userId, field.key, field.value)
+                }
+                DELETION -> users.delete(userId)
             }
 
             successfulMsgCounter.increment()
         } catch (e: Exception) {
             errorsMsgCounter.increment()
+            throw e
+        } finally {
+            consumedMsgCounter.increment()
         }
     }
 
     companion object {
-        private const val OPERATION_HEADER = "X-Operation"
+        private val log = LoggerFactory.getLogger(ChangeEventConsumer::class.java)
     }
-
 }
