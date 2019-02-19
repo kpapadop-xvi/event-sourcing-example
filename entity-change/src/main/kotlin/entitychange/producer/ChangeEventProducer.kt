@@ -1,6 +1,6 @@
 package entitychange.producer
 
-import entitychange.producer.KafkaConfiguration.Companion.USER_ENTITY_CHANGE_TOPIC
+import entitychange.producer.KafkaProducerConfiguration.Companion.USER_ENTITY_CHANGE_TOPIC
 import entitychange.producer.Operation.*
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.kafka.core.KafkaOperations
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 import org.springframework.util.concurrent.ListenableFutureCallback
 
 @Component
-class ChangeEventSource(
+class ChangeEventProducer(
         private val kafka: KafkaOperations<String, Map<String, Any?>>, meters: MeterRegistry,
         private val rnd: RandomProvider
 ) {
@@ -22,16 +22,6 @@ class ChangeEventSource(
 
     private val randomIds = rnd.randomUuids(100)
     private val randomMutableFieldSelect = rnd.randomSubset(MUTABLE_USER_FIELDS)
-
-    private inner class MessageCallback : ListenableFutureCallback<SendResult<String, Map<String, Any?>>> {
-        override fun onSuccess(result: SendResult<String, Map<String, Any?>>?) {
-            successMsgCounter.increment()
-        }
-
-        override fun onFailure(ex: Throwable) {
-            failedMsgCounter.increment()
-        }
-    }
 
     @Scheduled(fixedDelay = 1000)
     fun produceRandomChangeEvent() {
@@ -43,7 +33,7 @@ class ChangeEventSource(
                 .withPayload(userEntityFields)
                 .setHeader(KafkaHeaders.TOPIC, USER_ENTITY_CHANGE_TOPIC)
                 .setHeader(KafkaHeaders.MESSAGE_KEY, objId)
-                .setHeader("X-Operation", operation)
+                .setHeader(OPERATION_HEADER, operation)
                 .build()
 
         try {
@@ -88,7 +78,18 @@ class ChangeEventSource(
         }
     }
 
+    private inner class MessageCallback : ListenableFutureCallback<SendResult<String, Map<String, Any?>>> {
+        override fun onSuccess(result: SendResult<String, Map<String, Any?>>?) {
+            successMsgCounter.increment()
+        }
+
+        override fun onFailure(ex: Throwable) {
+            failedMsgCounter.increment()
+        }
+    }
+
     companion object {
+        private const val OPERATION_HEADER = "X-Operation"
         private const val FIRST_NAME = "firstName"
         private const val LAST_NAME = "lastName"
         private val MUTABLE_USER_FIELDS = listOf("stringValue", "intValue", "floatValue", "booleanValue")

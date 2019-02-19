@@ -18,6 +18,7 @@ dependencies {
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
 
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
     implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.2.4.RELEASE'
 

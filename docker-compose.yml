@@ -16,6 +16,8 @@ services:
       context: entity-api
     depends_on:
       - event-bus
+    environment:
+      KAFKA_BOOTSTRAP_ENDPOINTS: event-bus:9092
     ports:
       - 8080
 
