@@ -1,6 +1,8 @@
 package entitychange.producer
 
+import entitychange.producer.eventmodel.ChangeEvent
 import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerConfig.*
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,7 +29,7 @@ class KafkaProducerConfiguration {
             VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java)
 
     @Bean
-    fun producerFactory() = DefaultKafkaProducerFactory<String, Map<String, Any?>>(producerConfigs())
+    fun producerFactory() = DefaultKafkaProducerFactory<String, ChangeEvent>(producerConfigs())
 
     @Bean
     fun kafkaTemplate() = KafkaTemplate(producerFactory())

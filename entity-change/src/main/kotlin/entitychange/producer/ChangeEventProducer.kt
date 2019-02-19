@@ -1,19 +1,19 @@
 package entitychange.producer
 
 import entitychange.producer.KafkaProducerConfiguration.Companion.USER_ENTITY_CHANGE_TOPIC
-import entitychange.producer.Operation.*
+import entitychange.producer.eventmodel.ChangeEvent
+import entitychange.producer.eventmodel.Operation
+import entitychange.producer.eventmodel.Operation.*
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.kafka.core.KafkaOperations
-import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.SendResult
-import org.springframework.messaging.support.MessageBuilder
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.util.concurrent.ListenableFutureCallback
 
 @Component
 class ChangeEventProducer(
-        private val kafka: KafkaOperations<String, Map<String, Any?>>, meters: MeterRegistry,
+        private val kafka: KafkaOperations<String, ChangeEvent>, meters: MeterRegistry,
         private val rnd: RandomProvider
 ) {
     private val successMsgCounter = meters.counter("change-events.successful")
@@ -21,23 +21,17 @@ class ChangeEventProducer(
     private val errorsMsgCounter = meters.counter("change-events.errors")
 
     private val randomIds = rnd.randomUuids(100)
-    private val randomMutableFieldSelect = rnd.randomSubset(MUTABLE_USER_FIELDS)
+    private val randomFieldsSubset = rnd.randomDynamicSubset(MUTABLE_USER_FIELDS)
 
     @Scheduled(fixedDelay = 1000)
     fun produceRandomChangeEvent() {
         val objId = randomIds.random()
         val operation = Operation.values().random()
-        val userEntityFields = randomFields(operation)
-
-        val msg = MessageBuilder
-                .withPayload(userEntityFields)
-                .setHeader(KafkaHeaders.TOPIC, USER_ENTITY_CHANGE_TOPIC)
-                .setHeader(KafkaHeaders.MESSAGE_KEY, objId)
-                .setHeader(OPERATION_HEADER, operation)
-                .build()
+        val fields = randomFields(operation)
+        val event = ChangeEvent(operation, fields)
 
         try {
-            kafka.send(msg)
+            kafka.send(USER_ENTITY_CHANGE_TOPIC, objId, event)
                     .addCallback(MessageCallback())
         } catch (e: Exception) {
             errorsMsgCounter.increment()
@@ -48,8 +42,8 @@ class ChangeEventProducer(
     private fun randomFields(operation: Operation): Map<String, Any?> {
         return when (operation) {
             CREATION -> {
-                val rndName = rnd.randomFirstLastName()
-                mutableMapOf<String, Any?>(FIRST_NAME to rndName.first, LAST_NAME to rndName.second)
+                val rndName = rnd.randomName()
+                mutableMapOf<String, Any?>(NAME to rndName)
                         .also { it.putAll(randomMutableFields()) }
                         .let { it.toMap() }
             }
@@ -63,7 +57,7 @@ class ChangeEventProducer(
     }
 
     private fun randomMutableFields(): Map<String, Any?> {
-        return randomMutableFieldSelect.randomSelection()
+        return randomFieldsSubset.randomSelection()
                 .map { fieldName -> fieldName to randomValueForEntityField(fieldName) }
                 .toMap()
     }
@@ -78,8 +72,8 @@ class ChangeEventProducer(
         }
     }
 
-    private inner class MessageCallback : ListenableFutureCallback<SendResult<String, Map<String, Any?>>> {
-        override fun onSuccess(result: SendResult<String, Map<String, Any?>>?) {
+    private inner class MessageCallback : ListenableFutureCallback<SendResult<String, ChangeEvent>> {
+        override fun onSuccess(result: SendResult<String, ChangeEvent>?) {
             successMsgCounter.increment()
         }
 
@@ -89,9 +83,7 @@ class ChangeEventProducer(
     }
 
     companion object {
-        private const val OPERATION_HEADER = "X-Operation"
-        private const val FIRST_NAME = "firstName"
-        private const val LAST_NAME = "lastName"
+        private const val NAME = "name"
         private val MUTABLE_USER_FIELDS = listOf("stringValue", "intValue", "floatValue", "booleanValue")
     }
 }

@@ -17,18 +17,9 @@ class RandomProvider {
     fun nextFloat() = rnd.nextFloat()
     fun nextInt() = rnd.nextInt()
     fun randomString() = listOf("abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz!").random()
-
-    fun randomUuids(numberOfIds: Int): List<String> {
-        return (0..numberOfIds).map { UUID.randomUUID().toString() }
-    }
-
-    fun randomFirstLastName(): Pair<String, String> {
-        val rndName = rndNames.next().split((""))
-        return Pair(rndName[0], rndName[1])
-    }
-
-    fun <T> randomSubset(items: List<T>) = RandomItemSelection(items)
-
+    fun randomUuids(numberOfIds: Int) = (0..numberOfIds).map { UUID.randomUUID().toString() }
+    fun randomName() = rndNames.next()
+    fun <T> randomDynamicSubset(items: List<T>) = RandomItemSelection(items)
 }
 
 class RandomItemSelection<T>(private val items: List<T>) {
