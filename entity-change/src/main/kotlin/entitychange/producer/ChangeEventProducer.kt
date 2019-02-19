@@ -5,6 +5,7 @@ import entitychange.producer.eventmodel.ChangeEvent
 import entitychange.producer.eventmodel.Operation
 import entitychange.producer.eventmodel.Operation.*
 import io.micrometer.core.instrument.MeterRegistry
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.kafka.core.KafkaOperations
 import org.springframework.kafka.support.SendResult
 import org.springframework.scheduling.annotation.Scheduled
@@ -14,16 +15,17 @@ import org.springframework.util.concurrent.ListenableFutureCallback
 @Component
 class ChangeEventProducer(
         private val kafka: KafkaOperations<String, ChangeEvent>, meters: MeterRegistry,
-        private val rnd: RandomProvider
+        private val rnd: RandomProvider,
+        @Value("\${producer.max-distinct-ids:100}") val maxDistinctIds: Int
 ) {
     private val successMsgCounter = meters.counter("change-events.successful")
     private val failedMsgCounter = meters.counter("change-events.failed")
     private val errorsMsgCounter = meters.counter("change-events.errors")
 
-    private val randomIds = rnd.randomUuids(100)
+    private val randomIds = rnd.randomUuids(maxDistinctIds)
     private val randomFieldsSubset = rnd.randomDynamicSubset(MUTABLE_USER_FIELDS)
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelayString = "\${producer.sending-period-ms:10}")
     fun produceRandomChangeEvent() {
         val objId = randomIds.random()
         val operation = Operation.values().random()

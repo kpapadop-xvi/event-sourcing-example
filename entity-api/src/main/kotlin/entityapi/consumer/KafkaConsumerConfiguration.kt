@@ -11,6 +11,7 @@ import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
+import java.util.*
 
 @EnableKafka
 @Configuration
@@ -27,7 +28,8 @@ class KafkaConsumerConfiguration {
             BOOTSTRAP_SERVERS_CONFIG to props.bootstrapServers.joinToString(separator = ","),
             KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            GROUP_ID_CONFIG to "json",
+            GROUP_ID_CONFIG to UUID.randomUUID().toString(), // dirty workaround for reading from scratch
+            ENABLE_AUTO_COMMIT_CONFIG to "false",
             AUTO_OFFSET_RESET_CONFIG to "earliest"
     )
 

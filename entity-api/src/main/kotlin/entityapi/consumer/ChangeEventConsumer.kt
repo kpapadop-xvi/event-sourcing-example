@@ -23,13 +23,13 @@ class ChangeEventConsumer(
 
     private val objectMapper = jacksonObjectMapper()
 
-    @KafkaListener(clientIdPrefix = "change-event-listener", topics = [USER_ENTITY_CHANGE_TOPIC])
+    @KafkaListener(topics = [USER_ENTITY_CHANGE_TOPIC])
     fun consumeChangeEvent(message: ConsumerRecord<String, String>) {
         try {
             val userId = message.key()
             val changeEventRaw = message.value()
 
-            log.info("Received raw: {}", changeEventRaw)
+            log.trace("Received raw: {}", changeEventRaw)
 
             // Manual parsing is required since the Spring JsonDeserializer
             // cannot be used out-of-the-box with Kotlin
