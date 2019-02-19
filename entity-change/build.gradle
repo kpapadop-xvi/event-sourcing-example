@@ -1,7 +1,7 @@
 plugins {
-	id 'org.springframework.boot' version '2.1.3.RELEASE'
-	id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-	id 'org.jetbrains.kotlin.plugin.spring' version '1.3.21'
+    id 'org.springframework.boot' version '2.1.3.RELEASE'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.3.21'
 }
 
 apply plugin: 'io.spring.dependency-management'
@@ -11,33 +11,36 @@ version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 repositories {
-	jcenter()
+    jcenter()
 }
 
 dependencies {
-	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
-	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
 
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.2.4.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.2.4.RELEASE'
 
-	implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.8'
-	implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.8'
+    implementation group: 'org.kohsuke', name: 'wordnet-random-name', version: '1.3'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
-	testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-	testImplementation group: 'org.springframework.kafka', name: 'spring-kafka-test', version: '2.2.4.RELEASE'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+    testImplementation group: 'org.springframework.kafka', name: 'spring-kafka-test', version: '2.2.4.RELEASE'
 }
 
 compileKotlin {
-	kotlinOptions {
-		freeCompilerArgs = ['-Xjsr305=strict']
-		jvmTarget = '1.8'
-	}
+    kotlinOptions {
+        freeCompilerArgs = ['-Xjsr305=strict']
+        jvmTarget = '1.8'
+    }
 }
 
 compileTestKotlin {
-	kotlinOptions {
-		freeCompilerArgs = ['-Xjsr305=strict']
-		jvmTarget = '1.8'
-	}
+    kotlinOptions {
+        freeCompilerArgs = ['-Xjsr305=strict']
+        jvmTarget = '1.8'
+    }
 }

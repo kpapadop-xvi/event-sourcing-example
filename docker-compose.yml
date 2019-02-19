@@ -4,15 +4,20 @@ services:
 
   event-bus:
     image: wurstmeister/kafka:2.12-2.1.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: event-bus
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
   entity-api:
     image: entity-api
     build:
       context: entity-api
-    ports:
-      - 8080
     depends_on:
       - event-bus
+    ports:
+      - 8080
 
   entity-change:
     image: entity-change
@@ -20,3 +25,11 @@ services:
       context: entity-change
     depends_on:
       - event-bus
+    environment:
+      KAFKA_BOOTSTRAP_ENDPOINTS: event-bus:9092
+    ports:
+      - 8080
+
+  # Support container for kafka running as the event-bus
+  zookeeper:
+    image: zookeeper:3.4.13
